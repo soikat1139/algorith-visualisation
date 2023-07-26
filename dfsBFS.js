@@ -15,6 +15,8 @@ let r=0
 let g=206
 let b=209
 let paths=[]
+const pathStore={}
+let minHeap;
 
 let found;
 let path;
@@ -32,7 +34,10 @@ function setup(){
 
     rows=floor(height/resolution)
     cols=floor(width/resolution)
+    // rows=4
+    // cols=4
     path=new Path()
+    minHeap=new Heap()
  
 
     grid=make2dArray(rows,cols)
@@ -42,6 +47,9 @@ function setup(){
     
     grid[strPoint[0]][strPoint[1]].setSEpoint(true,false)
     grid[endPoint[0]][endPoint[1]].setSEpoint(false,true)
+    let dst=String(endPoint[0])+String(endPoint[1])
+
+    
    
     
    
@@ -54,9 +62,53 @@ function setup(){
     button = createButton('Clear');
     button.position(0, 40);
     button.mousePressed(clearBoard);
+    button = createButton("Dijkstra's Algorithm");
+    button.position(0, 60);
+    button.mousePressed(runDijkstra);
 
+    
+    async function runDijkstra(){
+        dst=String(endPoint[0])+String(endPoint[1])
+
+        minHeap=new Heap()
+        let shortest=shortestPath(strPoint[0],strPoint[1],grid,dst)
+       
+    
+      
+       
+
+
+
+        BFS(strPoint[0],strPoint[1],grid)
+
+        setTimeout( ()=>{
+             BFS2(strPoint[0],strPoint[1],grid,1,2)
+         
+
+         },400)
+        //  setTimeout(()=>{
+        //     BFS2(strPoint[0],strPoint[1],grid,2)
+
+        //  },200)
+        setTimeout(()=>{
+            BFS2(strPoint[0],strPoint[1],grid,2,3)
+
+         },1000)
+        setTimeout(async ()=>{
+            await BFS2(strPoint[0],strPoint[1],grid,3,4)
+            let spath=recursivePath(dst,[],shortest)
+
+            makeShorterPath(spath)
+
+         },1600)
+
+   
+        
+ 
+    } 
 
     function clearBoard(){
+        minHeap=new Heap()
         grid=make2dArray(rows,cols)
         strPoint=[floor(random(rows)),floor(random(cols))]
         endPoint=[floor(random(rows)),floor(random(cols))]
@@ -68,7 +120,7 @@ function setup(){
     async function runBG(){
          
          dfs(strPoint[0],strPoint[1],grid,1,path)
-        console.log(paths)
+       
 
         setTimeout(()=>{
             dfs2(strPoint[0],strPoint[1],grid,2,1)
@@ -85,8 +137,22 @@ function setup(){
 
 
     }
+    // minHeap=new Heap()
+    // let shortest=shortestPath(strPoint[0],strPoint[1],grid,dst)
+    // console.log(dst)
+    // console.log(shortest)
+
+    // console.log(recursivePath(dst,[],shortest))
+    
 
     async function runBFS(){
+        dst=String(endPoint[0])+String(endPoint[1])
+
+        minHeap=new Heap()
+        let shortest=shortestPath(strPoint[0],strPoint[1],grid,dst)
+        
+       
+
         BFS(strPoint[0],strPoint[1],grid)
 
         setTimeout( ()=>{
@@ -102,8 +168,11 @@ function setup(){
             BFS2(strPoint[0],strPoint[1],grid,2,3)
 
          },1000)
-        setTimeout(()=>{
-            BFS2(strPoint[0],strPoint[1],grid,3,4)
+         setTimeout(async ()=>{
+            await BFS2(strPoint[0],strPoint[1],grid,3,4)
+            let spath=recursivePath(dst,[],shortest)
+
+            makeShorterPath(spath)
 
          },1600)
         
@@ -127,6 +196,16 @@ function setup(){
     
 }
 
+function recursivePath(d,path,shortest){
+    if(! shortest[d]){
+        return 
+    }
+    recursivePath(shortest[d],path,shortest)
+    path.push(d)
+    
+    return path
+}
+
 
 
 
@@ -138,7 +217,7 @@ function windowResized() {
 
 function mouseClicked(){
 
-    console.log(!isMousePressedbyme)
+   
 
 if(!isMousePressedbyme){
     for(let i=0;i<grid.length;i++){
@@ -198,7 +277,7 @@ function mousePressed(){
 }
 function mouseReleased(){
     if(isMousePressedbyme){
-     console.log(mouseX)
+     
      for(let i=0;i<grid.length;i++){
         for(let j=0;j<grid[0].length;j++){
 
@@ -228,6 +307,20 @@ function mouseReleased(){
 }
 
 
+async function makeShorterPath(arr){
+
+    for(let i=1;i<arr.length-1;i++){
+        const [r,c]=pathStore[arr[i]]
+        await sleep(0.5)
+
+        grid[r][c].value=3
+    }
+
+}
+
+
+
+
 
 
 
@@ -235,7 +328,7 @@ function draw(){
 
 
     if(isMousePressedbyme){
-        console.log("Hello")
+        
     }
 
     background(255, 255, 255)
@@ -270,6 +363,16 @@ function draw(){
                // 52, 73, 94
                noStroke()
                fill(52, 73, 94)
+               rect(x,y,resolution,resolution)
+
+                
+
+            }
+            else if(grid[i][j].value==3){
+                
+               // 52, 73, 94
+               stroke(0)
+               fill(255,0,255)
                rect(x,y,resolution,resolution)
 
                 
@@ -336,19 +439,19 @@ function sleep(ms) {
 
 
 async function rgbChange(){
-    console.log("In function")
+    
     // 148,0,211
    
 
-        console.log("In set function")
+       
         
 
         for(let i=0;i<rows;i++){
             for(let j=0;j<cols;j++){
-                console.log("In for loop")
+               
                 await sleep(1)
                 if(grid[i][j].value==2){
-                    console.log("found")
+                   
 
                     grid[i][j].changeRGB(148,0,211)
 
@@ -414,7 +517,7 @@ async function dfsForMaze(r,c,grid,val=1,path){
     if(grid[r][c].endPoint==true){
 
         // found.setFound(val)
-        console.log(path.copy())
+        
         paths.push(path.copy())
         return
     }
@@ -431,7 +534,7 @@ async function dfsForMaze(r,c,grid,val=1,path){
 
 
     await sleep(1)
-    console.log([r,c])
+  
 
     grid[r][c].value=2
 
@@ -539,8 +642,9 @@ async function BFS(r,c,grid){
 
 }
 
+
 async function BFS2(r,c,grid,k,val){
-    console.log("Hello")
+   
     
 
     const rows=grid.length
@@ -592,6 +696,68 @@ async function BFS2(r,c,grid,k,val){
 }
 
 
+// Dijkstra's Algorithm To Find The Shortes Path
+
+
+function shortestPath(r,c,grid,dst){
+    const rows=grid.length
+    const cols=grid[0].length
+
+    const neighbors=[[0,1],[0,-1],[1,0],[-1,0]]
+
+    const shortest={}
+
+    let rc=String(r)+String(c)
+
+    
+
+    minHeap.heappush([0,rc,[]])
+   
+
+    while (minHeap.heap.length>0){
+
+        if(shortest[dst]){
+            break
+        }
+
+        const [w1,n1,sc]=minHeap.heappop()
+
+        const [r1,c1] = pathStore[n1]
+
+        if(shortest[n1]){
+          continue
+        }
+
+        shortest[n1]=sc
+
+        for(const [dr,dc] of neighbors){
+
+            let tempr=r1+dr
+            let tempc=c1+dc
+            let n2=String(tempr)+String(tempc)
+
+            if(tempr<0 || tempc <0 || tempr > rows-1 || tempc > cols-1 || shortest[n2] || grid[tempr][tempc].value==1 ){
+
+                continue
+
+            }
+
+            let w2=grid[tempr][tempc].weight
+            
+            minHeap.heappush([w1+w2,n2,n1])
+        }
+    }
+
+    return shortest
+
+
+
+
+
+
+}
+
+
 
 
 
@@ -603,6 +769,9 @@ function make2dArray(rows,cols){
     for(let i=0;i<rows;i++){
         let tempArr=[]
         for(let j=0;j<cols;j++){
+            
+            pathStore[String(i)+String(j)]=[i,j]
+
             tempArr.push(new Matrix(0,i,j))
 
         }
@@ -635,6 +804,7 @@ class Matrix{
         this.visited4=false
         this.row=row
         this.col=col
+        this.weight=1
     }
 
     getValue(){
@@ -901,7 +1071,9 @@ class Path{
 }
 
 
+
 //As there is no built in Heap or priority queue in JavaScript This is a small attempt to Implement Heap for JavaScript and That's all folks 
+
 
 
 class Heap{
@@ -912,9 +1084,12 @@ class Heap{
     heappush(val){
         this.heap.push(val)
 
-        let i=this.heap.length-1
+        if(Array.isArray(val)){
+            this.heap[0]=[0,0]
+         let i=this.heap.length-1
 
-        while (this.heap[i] < this.heap[Math.floor(i/2)]){
+
+         while (this.heap[i][0] < this.heap[Math.floor(i/2)][0]){
             let temp=this.heap[i]
 
             this.heap[i]=this.heap[Math.floor(i/2)]
@@ -923,7 +1098,27 @@ class Heap{
             i=Math.floor(i/2)
 
 
-        }       
+        }  
+
+        }
+        else{
+
+            let i=this.heap.length-1
+
+            while (this.heap[i] < this.heap[Math.floor(i/2)]){
+                let temp=this.heap[i]
+    
+                this.heap[i]=this.heap[Math.floor(i/2)]
+                this.heap[Math.floor(i/2)]=temp
+    
+                i=Math.floor(i/2)
+    
+    
+            }  
+
+        }
+
+         
 
     }
 
@@ -943,37 +1138,74 @@ class Heap{
 
         this.heap[1]=this.heap.pop()
         let i=1
-        while (2*i < this.heap.length){
-            if(((2*i)+1<this.heap.length) && (this.heap[2*i+1] < this.heap[2*i]) &&(this.heap[i] > this.heap[(2*i)+1])){
+
+        if(Array.isArray(this.heap[1])){
+            
+
+          
+
+
+
+            while (2*i < this.heap.length){
                 
-                let temp= this.heap[i]
-                this.heap[i]= this.heap[(2*i)+1]
-                this.heap[(2*i)+1]=temp
-
-                i=2*i+1
-
-
-            }
-            else if(  this.heap[(2*i)+1] > this.heap[2*i]  ){
-               
-                let temp= this.heap[i]
-                this.heap[i]=this.heap[2*i]
-                this.heap[2*i]=temp
-
-                i=2*i
-            }
-            else{
+                if(((2*i)+1<this.heap.length) && (this.heap[2*i+1][0] <= this.heap[2*i][0]) && (this.heap[i][0] > this.heap[(2*i)+1][0])){
+                    
+                    let temp= this.heap[i]
+                    this.heap[i]= this.heap[(2*i)+1]
+                    this.heap[(2*i)+1]=temp
+    
+                    i=2*i+1
+    
+    
+                }
+                else if(  this.heap[i][0] > this.heap[2*i][0]  ){
+                   
+                    let temp= this.heap[i]
+                    this.heap[i]=this.heap[2*i]
+                    this.heap[2*i]=temp
+    
+                    i=2*i
+                }
             
-                break
+                else{
+                
+                    break
+                }
             }
-            
 
-        
-        
-       
 
 
         }
+        else{
+            while (2*i < this.heap.length){
+                if(((2*i)+1<this.heap.length) && (this.heap[2*i+1] < this.heap[2*i]) &&(this.heap[i] > this.heap[(2*i)+1])){
+                    
+                    let temp= this.heap[i]
+                    this.heap[i]= this.heap[(2*i)+1]
+                    this.heap[(2*i)+1]=temp
+    
+                    i=2*i+1
+    
+    
+                }
+                else if(  this.heap[i] > this.heap[2*i]  ){
+                   
+                    let temp= this.heap[i]
+                    this.heap[i]=this.heap[2*i]
+                    this.heap[2*i]=temp
+    
+                    i=2*i
+                }
+                else{
+                
+                    break
+                }
+            }
+
+        }
+
+
+
      return res
 
 
@@ -1001,7 +1233,7 @@ class Heap{
     
     
                 }
-                else if(  this.heap[(2*i)+1] > this.heap[2*i]  ){
+                else if(  this.heap[i] > this.heap[2*i]  ){
                    
                     let temp= this.heap[i]
                     this.heap[i]=this.heap[2*i]
